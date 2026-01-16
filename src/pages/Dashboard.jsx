@@ -1,221 +1,196 @@
-import { useEffect, useState } from 'react'
-import {
-  Box,
-  Grid,
-  Heading,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
-  Card,
-  CardHeader,
-  CardBody,
-  SimpleGrid,
-  Text,
-  Badge,
-  HStack,
-  VStack,
-  Button,
-  useToast,
-  Spinner,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
-import { FiAlertTriangle, FiUsers, FiTool, FiAlertCircle } from 'react-icons/fi'
-import { disasterService, sosService, skillService } from '../services/api'
-import { DISASTER_TYPES, SEVERITY_LEVELS } from '../utils/constants'
-import { format } from 'date-fns'
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  ExclamationTriangleIcon, 
+  MapIcon, 
+  UserGroupIcon,
+  BellAlertIcon,
+} from '@heroicons/react/24/outline';
+import { useApp } from '../context/AppContext';
+import { disasterService, sosService } from '../services';
+import { StatCard, DisasterCard, SOSRequestCard, LoadingSpinner } from '../components/Cards';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(true)
-  const [disasters, setDisasters] = useState([])
-  const [stats, setStats] = useState({
-    activeDisasters: 0,
-    sosRequests: 0,
-    availableVolunteers: 0,
-    resources: 0,
-  })
-  const navigate = useNavigate()
-  const toast = useToast()
+  const navigate = useNavigate();
+  const { currentUser, activeDisasters, setActiveDisasters } = useApp();
+  const [stats, setStats] = useState(null);
+  const [recentSOS, setRecentSOS] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [])
+    loadDashboardData();
+  }, []);
 
-  const fetchDashboardData = async () => {
+  const loadDashboardData = async () => {
+    setLoading(true);
     try {
-      setLoading(true)
-      const [disastersRes, sosRes, skillsRes] = await Promise.all([
-        disasterService.getActive(),
-        sosService.getAll({ status: 'pending' }),
-        skillService.search({ available: true }),
-      ])
+      // Load active disasters
+      const disastersRes = await disasterService.getActiveDisasters();
+      const disasters = Array.isArray(disastersRes.data?.disasters) ? disastersRes.data.disasters : [];
+      setActiveDisasters(disasters);
 
-      setDisasters(disastersRes.data.disasters || disastersRes.data || [])
-      setStats({
-        activeDisasters: disastersRes.data.disasters?.length || disastersRes.data?.length || 0,
-        sosRequests: sosRes.data.requests?.length || 0,
-        availableVolunteers: skillsRes.data.skills?.length || 0,
-        resources: 0,
-      })
+      // Load disaster statistics
+      const statsRes = await disasterService.getDisasterStats();
+      setStats(statsRes.data);
+
+      // Load recent SOS requests
+      const sosRes = await sosService.getAllSOSRequests({ limit: 5, status: 'pending' });
+      setRecentSOS(Array.isArray(sosRes.data?.requests) ? sosRes.data.requests : []);
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error)
-      toast({
-        title: 'Error loading dashboard',
-        description: error.response?.data?.message || 'Failed to fetch data',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      })
+      console.error('Error loading dashboard:', error);
+      toast.error('Failed to load dashboard data');
+      setActiveDisasters([]);
+      setRecentSOS([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleSOSAction = (action, request) => {
+    if (action === 'accept') {
+      navigate('/dashboard/volunteer');
+    } else if (action === 'details') {
+      navigate('/dashboard/sos');
+    }
+  };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" h="400px">
-        <Spinner size="xl" color="brand.500" />
-      </Box>
-    )
+      <div className="p-6">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
-    <Box>
-      <Heading mb={6}>Dashboard</Heading>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Welcome back, {currentUser?.name || 'User'}
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Your disaster response dashboard
+        </p>
+      </div>
 
-      {/* Stats Cards */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-        <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>
-                <HStack>
-                  <FiAlertTriangle />
-                  <Text>Active Disasters</Text>
-                </HStack>
-              </StatLabel>
-              <StatNumber color="red.500">{stats.activeDisasters}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                Requires immediate attention
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Active Disasters"
+          value={activeDisasters.length}
+          icon={ExclamationTriangleIcon}
+          color="red"
+        />
+        <StatCard
+          title="Pending SOS"
+          value={recentSOS.length}
+          icon={BellAlertIcon}
+          color="yellow"
+        />
+        <StatCard
+          title="Active Volunteers"
+          value={stats?.activeVolunteers || 0}
+          icon={UserGroupIcon}
+          color="green"
+        />
+        <StatCard
+          title="Total Affected"
+          value={Array.isArray(activeDisasters) ? activeDisasters.reduce((sum, d) => sum + (d.affectedPopulation || 0), 0).toLocaleString() : '0'}
+          icon={MapIcon}
+          color="purple"
+        />
+      </div>
 
-        <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>
-                <HStack>
-                  <FiAlertCircle />
-                  <Text>SOS Requests</Text>
-                </HStack>
-              </StatLabel>
-              <StatNumber color="orange.500">{stats.sosRequests}</StatNumber>
-              <StatHelpText>Pending assignments</StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>
-                <HStack>
-                  <FiUsers />
-                  <Text>Available Volunteers</Text>
-                </HStack>
-              </StatLabel>
-              <StatNumber color="green.500">{stats.availableVolunteers}</StatNumber>
-              <StatHelpText>Ready to respond</StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <Stat>
-              <StatLabel>
-                <HStack>
-                  <FiTool />
-                  <Text>Resources</Text>
-                </HStack>
-              </StatLabel>
-              <StatNumber color="blue.500">{stats.resources}</StatNumber>
-              <StatHelpText>Available equipment</StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-      </SimpleGrid>
+      {/* Quick Actions */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button
+            onClick={() => navigate('/dashboard/sos')}
+            className="p-4 border-2 border-disaster-red rounded-lg hover:bg-disaster-red hover:text-white transition-colors group"
+          >
+            <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2 text-disaster-red group-hover:text-white" />
+            <p className="font-semibold">Send SOS</p>
+            <p className="text-sm opacity-75">Emergency assistance</p>
+          </button>
+          <button
+            onClick={() => navigate('/dashboard/map')}
+            className="p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-colors group"
+          >
+            <MapIcon className="w-8 h-8 mx-auto mb-2 text-blue-500 group-hover:text-white" />
+            <p className="font-semibold">View Map</p>
+            <p className="text-sm opacity-75">Disaster locations</p>
+          </button>
+          <button
+            onClick={() => navigate('/dashboard/volunteer')}
+            className="p-4 border-2 border-rescue-primary rounded-lg hover:bg-rescue-primary hover:text-white transition-colors group"
+          >
+            <UserGroupIcon className="w-8 h-8 mx-auto mb-2 text-rescue-primary group-hover:text-white" />
+            <p className="font-semibold">Volunteer</p>
+            <p className="text-sm opacity-75">Offer help</p>
+          </button>
+        </div>
+      </div>
 
       {/* Active Disasters */}
-      <Card>
-        <CardHeader>
-          <HStack justify="space-between">
-            <Heading size="md">Active Disasters</Heading>
-            <Button
-              size="sm"
-              colorScheme="brand"
-              onClick={() => navigate('/disasters')}
-            >
-              View All
-            </Button>
-          </HStack>
-        </CardHeader>
-        <CardBody>
-          {disasters.length === 0 ? (
-            <Alert status="info">
-              <AlertIcon />
-              No active disasters at the moment
-            </Alert>
-          ) : (
-            <VStack spacing={4} align="stretch">
-              {disasters.slice(0, 5).map((disaster) => (
-                <Box
-                  key={disaster.disasterId}
-                  p={4}
-                  borderWidth="1px"
-                  borderRadius="lg"
-                  cursor="pointer"
-                  _hover={{ bg: 'gray.50' }}
-                  onClick={() => navigate(`/disasters/${disaster.disasterId}`)}
-                >
-                  <HStack justify="space-between" mb={2}>
-                    <HStack>
-                      <Text fontSize="2xl">
-                        {DISASTER_TYPES[disaster.disasterType]?.icon || '⚠️'}
-                      </Text>
-                      <VStack align="start" spacing={0}>
-                        <Text fontWeight="bold">
-                          {DISASTER_TYPES[disaster.disasterType]?.label || disaster.disasterType}
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                          {disaster.location?.address || 'Unknown location'}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                    <Badge
-                      colorScheme={SEVERITY_LEVELS[disaster.severity]?.color || 'gray'}
-                      fontSize="0.8em"
-                    >
-                      {disaster.severity?.toUpperCase()}
-                    </Badge>
-                  </HStack>
-                  <Text fontSize="sm" color="gray.500">
-                    Reported: {disaster.reportedAt ? format(new Date(disaster.reportedAt), 'PPp') : 'Unknown'}
-                  </Text>
-                </Box>
-              ))}
-            </VStack>
-          )}
-        </CardBody>
-      </Card>
-    </Box>
-  )
-}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Active Disasters</h2>
+          <button
+            onClick={() => navigate('/dashboard/map')}
+            className="text-sm text-rescue-primary hover:underline"
+          >
+            View all on map →
+          </button>
+        </div>
+        {activeDisasters.length === 0 ? (
+          <div className="card text-center py-8 text-gray-500">
+            No active disasters in your area
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {activeDisasters.slice(0, 4).map((disaster) => (
+              <DisasterCard
+                key={disaster.disasterId}
+                disaster={disaster}
+                onClick={() => navigate('/dashboard/map')}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-export default Dashboard
+      {/* Recent SOS Requests */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Recent SOS Requests</h2>
+          <button
+            onClick={() => navigate('/dashboard/sos')}
+            className="text-sm text-rescue-primary hover:underline"
+          >
+            View all →
+          </button>
+        </div>
+        {recentSOS.length === 0 ? (
+          <div className="card text-center py-8 text-gray-500">
+            No pending SOS requests
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentSOS.map((request) => (
+              <SOSRequestCard
+                key={request.requestId}
+                request={request}
+                onAction={handleSOSAction}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;

@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-rescue-primary text-white rounded-lg hover:bg-rescue-primary/90 transition-colors font-medium;
+  }
+  
+  .btn-danger {
+    @apply px-4 py-2 bg-disaster-red text-white rounded-lg hover:bg-disaster-red/90 transition-colors font-medium;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rescue-primary focus:border-transparent;
+  }
+  
+  .badge {
+    @apply px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .badge-critical {
+    @apply bg-disaster-red text-white;
+  }
+  
+  .badge-high {
+    @apply bg-disaster-orange text-white;
+  }
+  
+  .badge-medium {
+    @apply bg-disaster-yellow text-white;
+  }
+  
+  .badge-low {
+    @apply bg-blue-500 text-white;
+  }
+  
+  .badge-active {
+    @apply bg-green-500 text-white;
+  }
+  
+  .badge-pending {
+    @apply bg-yellow-500 text-white;
+  }
+  
+  .badge-resolved {
+    @apply bg-gray-500 text-white;
+  }
+}
+
+/* Leaflet map fix */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* SOS Pulse Animation */
+@keyframes sos-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.sos-button {
+  animation: sos-pulse 2s ease-in-out infinite;
+}

@@ -1,123 +1,57 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import Layout from './components/Layout/Layout'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Disasters from './pages/Disasters'
-import DisasterDetail from './pages/DisasterDetail'
-import Users from './pages/Users'
-import Skills from './pages/Skills'
-import SOSRequests from './pages/SOSRequests'
-import Matching from './pages/Matching'
-import Notifications from './pages/Notifications'
-
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('authToken')
-  return token ? children : <Navigate to="/login" replace />
-}
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import Dashboard from './pages/Dashboard';
+import SOSPage from './pages/SOSPage';
+import DisasterMap from './pages/DisasterMap';
+import VolunteerHub from './pages/VolunteerHub';
+import ResourceManagement from './pages/ResourceManagement';
+import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
+import ReportDisaster from './pages/ReportDisaster';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  useEffect(() => {
-    const token = localStorage.getItem('authToken')
-    setIsAuthenticated(!!token)
-  }, [])
-
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <Router>
+      <AuthProvider>
+        <AppProvider>
+          <Toaster position="top-right" />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="sos" element={<SOSPage />} />
+              <Route path="map" element={<DisasterMap />} />
+              <Route path="volunteer" element={<VolunteerHub />} />
+              <Route path="resources" element={<ResourceManagement />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="report-disaster" element={<ReportDisaster />} />
+            </Route>
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/disasters"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Disasters />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/disasters/:id"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <DisasterDetail />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/users"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Users />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/skills"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Skills />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/sos"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <SOSRequests />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/matching"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Matching />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notifications"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Notifications />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
-  )
+            {/* Catch all - redirect to landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppProvider>
+      </AuthProvider>
+    </Router>
+  );
 }
 
-export default App
-
+export default App;

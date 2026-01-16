@@ -1,78 +1,52 @@
-import apiClient from '../utils/api'
+import axios from 'axios';
 
-// Authentication Service APIs
-export const authService = {
-  login: (credentials) => apiClient.post('/api/auth/login', credentials),
-  register: (userData) => apiClient.post('/api/auth/register', userData),
-  logout: () => apiClient.post('/api/auth/logout'),
-  getCurrentUser: () => apiClient.get('/api/auth/me'),
-  updateProfile: (data) => apiClient.put('/api/auth/profile', data),
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-// Disaster Service APIs
-export const disasterService = {
-  getActive: () => apiClient.get('/api/disasters/active'),
-  getById: (id) => apiClient.get(`/api/disasters/${id}`),
-  getNearby: (latitude, longitude, radius = 50) =>
-    apiClient.get(`/api/disasters/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`),
-  create: (data) => apiClient.post('/api/disasters', data),
-  update: (id, data) => apiClient.put(`/api/disasters/${id}`, data),
-  getStats: () => apiClient.get('/api/disasters/types/stats'),
-}
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
 
-// User Service APIs
-export const userService = {
-  getById: (id) => apiClient.get(`/api/users/${id}`),
-  getLocation: (id) => apiClient.get(`/api/users/${id}/location`),
-  getBatch: (userIds) => apiClient.post('/api/users/batch', { userIds }),
-  updateLocation: (id, location) => apiClient.put(`/api/users/${id}/location`, location),
-  create: (data) => apiClient.post('/api/users', data),
-  update: (id, data) => apiClient.put(`/api/users/${id}`, data),
-}
+// Request interceptor
+api.interceptors.request.use(
+  (config) => {
+    // Add auth token if available
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// Skill Service APIs
-export const skillService = {
-  search: (params) => apiClient.get('/api/skills', { params }),
-  getById: (id) => apiClient.get(`/api/skills/${id}`),
-  create: (data) => apiClient.post('/api/skills', data),
-  updateAvailability: (id, available) =>
-    apiClient.put(`/api/skills/${id}/availability`, { available }),
-  getTemplate: (disasterType) => apiClient.get(`/api/disaster-templates/${disasterType}`),
-}
+// Response interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      // Only redirect if not already on auth pages
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/login') && !currentPath.includes('/register') && currentPath !== '/') {
+        console.log('Unauthorized - redirecting to login');
+        // Clear auth data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        delete api.defaults.headers.common['Authorization'];
+        // Redirect to login
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
-// Resource Service APIs
-export const resourceService = {
-  search: (params) => apiClient.get('/api/resources', { params }),
-  getById: (id) => apiClient.get(`/api/resources/${id}`),
-  create: (data) => apiClient.post('/api/resources', data),
-  updateAvailability: (id, available) =>
-    apiClient.put(`/api/resources/${id}/availability`, { available }),
-}
-
-// SOS Service APIs
-export const sosService = {
-  create: (data) => apiClient.post('/api/sos/requests', data),
-  getAll: (params) => apiClient.get('/api/sos/requests', { params }),
-  getById: (id) => apiClient.get(`/api/sos/requests/${id}`),
-  update: (id, data) => apiClient.put(`/api/sos/requests/${id}`, data),
-}
-
-// Matching Service APIs
-export const matchingService = {
-  match: (data) => apiClient.post('/api/matching/match', data),
-  getResults: (params) => apiClient.get('/api/matching/results', { params }),
-  getById: (id) => apiClient.get(`/api/matching/results/${id}`),
-}
-
-// Notification Service APIs
-export const notificationService = {
-  send: (data) => apiClient.post('/api/notifications/send', data),
-  getHistory: (userId) => apiClient.get(`/api/notifications/history/${userId}`),
-  getById: (id) => apiClient.get(`/api/notifications/${id}`),
-}
-
-// Health Check APIs
-export const healthService = {
-  gateway: () => apiClient.get('/health'),
-  service: (serviceName) => apiClient.get(`/health/${serviceName}`),
-}
+export default api;

@@ -1,266 +1,260 @@
 # RescueMesh Frontend
 
-A modern, responsive web application built with React and Chakra UI v2 for the RescueMesh disaster coordination platform.
+A comprehensive React-based disaster response platform frontend built with React, Tailwind CSS, and Leaflet maps.
 
-## 🚀 Features
+## Features
 
-- **Dashboard**: Real-time overview of active disasters, SOS requests, and available volunteers
-- **Disaster Management**: View, create, and track disaster events with detailed information
-- **User Management**: Browse volunteers, authorities, and other users
-- **Skills & Resources**: Track available skills and equipment for disaster response
-- **SOS Requests**: Create and manage emergency requests
-- **Matching System**: View intelligent volunteer-to-request matching results
-- **Notifications**: Real-time notification center for all platform events
+### 🏠 Dashboard
+- Real-time disaster statistics
+- Active SOS requests overview
+- Quick action buttons
+- Volunteer activity monitoring
 
-## 🛠 Tech Stack
+### 🆘 SOS Emergency
+- Emergency request creation
+- Urgency level selection (Critical, High, Medium, Low)
+- Disaster-specific skill/resource selection
+- Real-time location tracking
+- Contact information management
 
-- **React 18** - Modern React with hooks
-- **Chakra UI v2** - Component library for beautiful, accessible UI
-- **React Router v6** - Client-side routing
-- **Axios** - HTTP client for API requests
-- **React Query** - Data fetching and caching
-- **Vite** - Fast build tool and dev server
-- **Date-fns** - Date formatting utilities
-- **React Icons** - Icon library
-- **Leaflet** - Map integration (optional)
+### 🗺️ Disaster Map
+- Interactive map with Leaflet/OpenStreetMap
+- Visual disaster zones with severity indicators
+- SOS request markers
+- Disaster impact radius visualization
+- Real-time updates
 
-## 📦 Installation
+### 👥 Volunteer Hub
+- Available emergency requests
+- Match management (accept/reject)
+- Skill registration
+- Trust score tracking
+- Response history
+
+### 📦 Resource Management
+- Register skills and resources
+- Update availability status
+- Resource inventory tracking
+- Skill certification levels
+
+### 🔔 Notifications
+- Real-time alerts
+- SOS notifications
+- Match notifications
+- Disaster alerts
+- Multi-channel delivery status
+
+### 👤 Profile
+- User information management
+- Location tracking
+- Trust score display
+- Account settings
+
+## Tech Stack
+
+- **React 18** - UI framework
+- **React Router 6** - Navigation
+- **Tailwind CSS** - Styling
+- **Leaflet + React-Leaflet** - Interactive maps
+- **Axios** - API communication
+- **React Hot Toast** - Notifications
+- **Heroicons** - Icon library
+- **Vite** - Build tool
+
+## Getting Started
 
 ### Prerequisites
-
 - Node.js 18+ and npm
-- Running RescueMesh backend services (API Gateway on port 8000)
 
-### Setup
+### Local Development
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Configure environment**:
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` if needed:
-   ```
-   VITE_API_BASE_URL=http://localhost:8000
-   VITE_APP_TITLE=RescueMesh
-   ```
-
-3. **Start development server**:
-   ```bash
-   npm run dev
-   ```
-
-   The app will be available at `http://localhost:3000`
-
-## 🐳 Docker Deployment
-
-### Build Docker image:
 ```bash
-docker build -t rescuemesh-frontend .
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Access at http://localhost:3000
 ```
 
-### Run container:
+### Environment Variables
+
+Create a `.env` file:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### Build for Production
+
 ```bash
-docker run -p 80:80 rescuemesh-frontend
+npm run build
+npm run preview
 ```
 
-### Using Docker Compose (from project root):
-Add to your `docker-compose.yml`:
-```yaml
-frontend:
-  build: ./frontend
-  ports:
-    - "3000:80"
-  depends_on:
-    - api-gateway
-  networks:
-    - rescuemesh-network
-```
+## Docker Deployment
 
-Then run:
+### Build and Run
+
 ```bash
-docker-compose up -d frontend
+# From project root
+docker compose up -d frontend
+
+# Or rebuild
+docker compose up -d --build frontend
 ```
 
-## 🔧 Development
+The frontend will be available at `http://localhost:3000`
 
-### Available Scripts
-
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run ESLint
-
-### Project Structure
+## Project Structure
 
 ```
 frontend/
-├── public/              # Static assets
 ├── src/
-│   ├── components/      # Reusable components
-│   │   └── Layout/      # Layout components (Header, Sidebar, etc.)
-│   ├── pages/           # Page components
+│   ├── components/        # Reusable UI components
+│   │   ├── Layout.jsx    # Main layout with sidebar
+│   │   ├── Cards.jsx     # Card components
+│   │   └── Modal.jsx     # Modal dialogs
+│   ├── context/          # React context providers
+│   │   └── AppContext.jsx
+│   ├── pages/            # Page components
 │   │   ├── Dashboard.jsx
-│   │   ├── Disasters.jsx
-│   │   ├── DisasterDetail.jsx
-│   │   ├── Users.jsx
-│   │   ├── Skills.jsx
-│   │   ├── SOSRequests.jsx
-│   │   ├── Matching.jsx
-│   │   └── Notifications.jsx
-│   ├── services/        # API service layer
-│   │   └── api.js
-│   ├── utils/           # Utilities and constants
+│   │   ├── SOSPage.jsx
+│   │   ├── DisasterMap.jsx
+│   │   ├── VolunteerHub.jsx
+│   │   ├── ResourceManagement.jsx
+│   │   ├── Notifications.jsx
+│   │   └── Profile.jsx
+│   ├── services/         # API service layer
 │   │   ├── api.js       # Axios instance
-│   │   └── constants.js # App constants
+│   │   └── index.js     # Service methods
 │   ├── App.jsx          # Main app component
 │   ├── main.jsx         # Entry point
-│   └── theme.js         # Chakra UI theme customization
-├── index.html
-├── vite.config.js
-├── package.json
-├── Dockerfile
-└── README.md
+│   └── index.css        # Global styles
+├── public/              # Static assets
+├── Dockerfile           # Production build
+├── nginx.conf          # Nginx configuration
+├── vite.config.js      # Vite configuration
+├── tailwind.config.js  # Tailwind configuration
+└── package.json
 ```
 
-## 🎨 Features Overview
+## API Integration
 
-### Dashboard
-- Active disaster count and statistics
-- Pending SOS requests
-- Available volunteers and resources
-- Quick links to all sections
+The frontend connects to 6 microservices through an API gateway:
 
-### Disaster Management
-- View all active disasters on cards
-- Create new disaster reports
-- Filter by disaster type and severity
-- Detailed disaster view with required resources
+1. **User Service** (Port 3001) - User management
+2. **Skill Service** (Port 3002) - Skills & resources
+3. **Disaster Service** (Port 3003) - Disaster events
+4. **SOS Service** (Port 3004) - Emergency requests
+5. **Matching Service** (Port 3005) - Volunteer matching
+6. **Notification Service** (Port 3006) - Alerts & notifications
 
-### Users
-- Browse all users (volunteers, authorities, NGOs)
-- Filter by role
-- View user profiles with location and trust scores
+All requests are proxied through the API Gateway at `http://localhost:8000`
 
-### Skills & Resources
-- Two-tab interface for skills and resources
-- Filter by disaster type
-- View availability status
-- See certifications and proficiency levels
+## Key Features Implementation
 
-### SOS Requests
-- Create emergency requests
-- View all pending/active requests
-- Track urgency levels and required skills
-- Real-time status updates
+### Real-time Disaster Map
+- Uses Leaflet for interactive maps
+- Circle overlays for disaster impact zones
+- Color-coded severity indicators
+- Popup details for disasters and SOS requests
 
-### Matching
-- View volunteer-to-request matches
-- See match scores and distances
-- Estimated arrival times
-- Assign volunteers to requests
+### Responsive Design
+- Mobile-first approach
+- Collapsible sidebar on mobile
+- Touch-friendly interface
+- Optimized for all screen sizes
 
-### Notifications
-- Multi-channel notification history
-- Priority-based filtering
-- Real-time status indicators
+### User Experience
+- Toast notifications for feedback
+- Loading states for async operations
+- Empty states with helpful messages
+- Form validation
+- Confirmation dialogs for critical actions
 
-## 🌐 API Integration
+## Customization
 
-The frontend communicates with the RescueMesh API Gateway:
+### Colors
 
-- **Base URL**: `http://localhost:8000` (configurable via `.env`)
-- **Proxy**: Vite dev server proxies `/api` requests to the gateway
-- **Services**: Disaster, User, Skill, Resource, SOS, Matching, Notification
-
-### API Service Layer
-
-All API calls are abstracted in `src/services/api.js`:
+Edit `tailwind.config.js` to customize theme colors:
 
 ```javascript
-import { disasterService } from '../services/api'
-
-// Get active disasters
-const disasters = await disasterService.getActive()
-
-// Create new disaster
-await disasterService.create({ ... })
-```
-
-## 🎨 Theming
-
-Customize the theme in `src/theme.js`:
-
-- **Brand Colors**: Purple gradient
-- **Emergency Colors**: Red tones for urgent items
-- **Components**: Pre-styled Chakra UI components
-- **Responsive**: Mobile-first design
-
-## 📱 Responsive Design
-
-- **Mobile**: Hamburger menu, stacked cards
-- **Tablet**: Sidebar visible, 2-column grids
-- **Desktop**: Full layout with 3-4 column grids
-
-## 🔐 Authentication (Future)
-
-The app is prepared for authentication:
-- JWT token storage in localStorage
-- Auth interceptor in Axios instance
-- Protected routes ready to be added
-
-## 🚧 Future Enhancements
-
-- [ ] Real-time updates via WebSocket
-- [ ] Interactive maps with Leaflet
-- [ ] Advanced filtering and search
-- [ ] User authentication and authorization
-- [ ] File uploads for disaster reports
-- [ ] Push notifications
-- [ ] Offline support with service workers
-- [ ] Analytics dashboard
-- [ ] Multi-language support
-
-## 🐛 Troubleshooting
-
-### API Connection Issues
-- Ensure backend services are running
-- Check `VITE_API_BASE_URL` in `.env`
-- Verify CORS is enabled in API Gateway
-
-### Build Errors
-```bash
-# Clear node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-### Port Already in Use
-```bash
-# Change port in vite.config.js
-server: {
-  port: 3001  // Change to available port
+colors: {
+  disaster: {
+    red: '#DC2626',    // Critical
+    orange: '#EA580C', // High
+    yellow: '#CA8A04', // Medium
+    blue: '#2563EB',   // Low
+  },
+  rescue: {
+    primary: '#059669',   // Main action color
+    secondary: '#0891B2', // Secondary actions
+    accent: '#7C3AED',    // Highlights
+  },
 }
 ```
 
-## 📄 License
+### Disaster Icons
 
-Part of the RescueMesh project.
+Modify disaster icons in `DisasterMap.jsx` and `Dashboard.jsx`:
 
-## 👥 Contributing
+```javascript
+const disasterIcons = {
+  flood: '🌊',
+  earthquake: '🌋',
+  fire: '🔥',
+  // Add more...
+};
+```
 
-1. Create a feature branch
-2. Make your changes
-3. Submit a pull request
+## Performance Optimizations
 
-## 📞 Support
+- Code splitting with React.lazy
+- Image optimization
+- Gzip compression in nginx
+- Static asset caching
+- API request debouncing
+- Memoization for expensive computations
 
-For issues or questions, contact the RescueMesh development team.
+## Browser Support
 
----
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest)
+- Mobile browsers (iOS Safari, Chrome)
 
-**Built with ❤️ for disaster response coordination**
+## Contributing
+
+When adding new features:
+
+1. Create components in `src/components/`
+2. Add pages to `src/pages/`
+3. Update routes in `App.jsx`
+4. Add API methods to `src/services/`
+5. Use existing UI patterns for consistency
+
+## Troubleshooting
+
+### Map not loading
+- Check Leaflet CSS is imported in `index.html`
+- Verify map container has explicit height
+- Check network connection for tile loading
+
+### API errors
+- Verify API gateway is running: `http://localhost:8000`
+- Check CORS configuration
+- Verify all backend services are running
+
+### Build errors
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Clear Vite cache: `rm -rf .vite`
+- Check Node.js version: `node -v` (should be 18+)
+
+## License
+
+Part of the RescueMesh platform - Disaster Response System

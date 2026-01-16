@@ -1,202 +1,204 @@
-import { useEffect, useState } from 'react'
-import {
-  Box,
-  Heading,
-  Card,
-  CardBody,
-  Text,
-  Badge,
-  VStack,
-  HStack,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react'
-import { FiBell, FiCheck, FiAlertCircle, FiInfo } from 'react-icons/fi'
-import { format } from 'date-fns'
+import React, { useState, useEffect } from 'react';
+import { BellIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { useApp } from '../context/AppContext';
+import { notificationService } from '../services';
+import { LoadingSpinner, EmptyState } from '../components/Cards';
+import toast from 'react-hot-toast';
 
 const Notifications = () => {
-  const [notifications, setNotifications] = useState([])
-
-  // Mock data
-  const mockNotifications = [
-    {
-      notificationId: 'notif-001',
-      userId: 'user-001',
-      type: 'sos_match',
-      priority: 'high',
-      message: 'You have been matched to an emergency request',
-      data: {
-        sosRequestId: 'sos-001',
-        location: 'Delhi, India',
-      },
-      channels: ['sms', 'push'],
-      status: 'sent',
-      createdAt: '2026-01-16T10:05:00Z',
-    },
-    {
-      notificationId: 'notif-002',
-      userId: 'user-002',
-      type: 'disaster_alert',
-      priority: 'critical',
-      message: 'New flood disaster reported in your area',
-      data: {
-        disasterId: 'disaster-001',
-        location: 'Delhi, India',
-      },
-      channels: ['sms', 'push'],
-      status: 'sent',
-      createdAt: '2026-01-16T09:00:00Z',
-    },
-    {
-      notificationId: 'notif-003',
-      userId: 'user-001',
-      type: 'assignment_update',
-      priority: 'medium',
-      message: 'Your SOS assignment has been updated',
-      data: {
-        sosRequestId: 'sos-001',
-      },
-      channels: ['push'],
-      status: 'delivered',
-      createdAt: '2026-01-16T08:30:00Z',
-    },
-  ]
+  const { currentUser } = useApp();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    setNotifications(mockNotifications)
-  }, [])
+    loadNotifications();
+  }, []);
 
-  const getIcon = (type) => {
-    switch (type) {
-      case 'sos_match':
-        return <FiBell />
-      case 'disaster_alert':
-        return <FiAlertCircle />
-      case 'assignment_update':
-        return <FiInfo />
-      default:
-        return <FiBell />
+  const loadNotifications = async () => {
+    setLoading(true);
+    try {
+      if (currentUser) {
+        const res = await notificationService.getUserNotifications(currentUser.userId, {
+          limit: 50,
+          offset: 0,
+        });
+        setNotifications(res.data.notifications || []);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      toast.error('Failed to load notifications');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'critical':
-        return 'red'
-      case 'high':
-        return 'orange'
-      case 'medium':
-        return 'yellow'
-      case 'low':
-        return 'blue'
-      default:
-        return 'gray'
+  const markAsRead = async (notificationId) => {
+    try {
+      await notificationService.markAsRead(notificationId);
+      setNotifications(prev =>
+        prev.map(n =>
+          n.notificationId === notificationId
+            ? { ...n, status: 'delivered' }
+            : n
+        )
+      );
+    } catch (error) {
+      console.error('Error marking as read:', error);
     }
-  }
+  };
+
+  const getNotificationIcon = (type) => {
+    const icons = {
+      sos_created: '🆘',
+      match_found: '🤝',
+      match_accepted: '✅',
+      disaster_alert: '⚠️',
+      status_update: 'ℹ️',
+    };
+    return icons[type] || '📢';
+  };
+
+  const getNotificationColor = (type) => {
+    const colors = {
+      sos_created: 'bg-red-50 border-red-200',
+      match_found: 'bg-blue-50 border-blue-200',
+      match_accepted: 'bg-green-50 border-green-200',
+      disaster_alert: 'bg-orange-50 border-orange-200',
+      status_update: 'bg-gray-50 border-gray-200',
+    };
+    return colors[type] || 'bg-gray-50 border-gray-200';
+  };
+
+  const filteredNotifications = notifications.filter(n => {
+    if (filter === 'all') return true;
+    if (filter === 'unread') return n.status !== 'delivered';
+    if (filter === 'read') return n.status === 'delivered';
+    return true;
+  });
 
   return (
-    <Box>
-      <Heading mb={6}>Notifications</Heading>
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+        <p className="text-gray-600 mt-1">Stay updated with alerts and messages</p>
+      </div>
 
-      {notifications.length === 0 ? (
-        <Alert status="info">
-          <AlertIcon />
-          No notifications
-        </Alert>
+      {/* Filter Tabs */}
+      <div className="card mb-6">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'all'
+                ? 'bg-rescue-primary text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            All ({notifications.length})
+          </button>
+          <button
+            onClick={() => setFilter('unread')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'unread'
+                ? 'bg-rescue-primary text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Unread ({notifications.filter(n => n.status !== 'delivered').length})
+          </button>
+          <button
+            onClick={() => setFilter('read')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'read'
+                ? 'bg-rescue-primary text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Read ({notifications.filter(n => n.status === 'delivered').length})
+          </button>
+        </div>
+      </div>
+
+      {/* Notifications List */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : filteredNotifications.length === 0 ? (
+        <EmptyState
+          icon={BellIcon}
+          title="No notifications"
+          description={
+            filter === 'all'
+              ? 'You have no notifications yet'
+              : `No ${filter} notifications`
+          }
+        />
       ) : (
-        <VStack spacing={4} align="stretch">
-          {notifications.map((notification) => (
-            <Card key={notification.notificationId}>
-              <CardBody>
-                <HStack align="start" spacing={4}>
-                  <Box
-                    p={3}
-                    borderRadius="full"
-                    bg={`${getPriorityColor(notification.priority)}.50`}
-                    color={`${getPriorityColor(notification.priority)}.500`}
-                  >
-                    {getIcon(notification.type)}
-                  </Box>
-
-                  <VStack align="start" flex="1" spacing={2}>
-                    <HStack justify="space-between" w="full">
-                      <HStack spacing={2}>
-                        <Badge
-                          colorScheme={getPriorityColor(notification.priority)}
-                          fontSize="0.8em"
-                        >
-                          {notification.priority?.toUpperCase()}
-                        </Badge>
-                        <Badge colorScheme="purple" fontSize="0.8em">
-                          {notification.type.replace(/_/g, ' ').toUpperCase()}
-                        </Badge>
-                      </HStack>
-                      <Text fontSize="sm" color="gray.500">
-                        {format(new Date(notification.createdAt), 'PPp')}
-                      </Text>
-                    </HStack>
-
-                    <Text fontWeight="bold">{notification.message}</Text>
-
-                    {notification.data && (
-                      <Box>
-                        {notification.data.sosRequestId && (
-                          <Text fontSize="sm" color="gray.600">
-                            SOS Request: {notification.data.sosRequestId}
-                          </Text>
-                        )}
-                        {notification.data.disasterId && (
-                          <Text fontSize="sm" color="gray.600">
-                            Disaster: {notification.data.disasterId}
-                          </Text>
-                        )}
-                        {notification.data.location && (
-                          <Text fontSize="sm" color="gray.600">
-                            Location: {notification.data.location}
-                          </Text>
-                        )}
-                      </Box>
+        <div className="space-y-3">
+          {filteredNotifications.map((notification) => (
+            <div
+              key={notification.notificationId}
+              className={`card border ${getNotificationColor(notification.type)} ${
+                notification.status !== 'delivered' ? 'border-l-4' : ''
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="text-3xl">{getNotificationIcon(notification.type)}</div>
+                
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 capitalize">
+                        {notification.type?.replace(/_/g, ' ')}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                    </div>
+                    
+                    {notification.status !== 'delivered' && (
+                      <button
+                        onClick={() => markAsRead(notification.notificationId)}
+                        className="text-rescue-primary hover:text-rescue-primary/80 ml-4"
+                        title="Mark as read"
+                      >
+                        <CheckIcon className="w-5 h-5" />
+                      </button>
                     )}
+                  </div>
 
-                    <HStack>
-                      <Text fontSize="sm" color="gray.500">
-                        Channels:
-                      </Text>
-                      {notification.channels?.map((channel, idx) => (
-                        <Badge key={idx} colorScheme="blue" size="sm">
-                          {channel.toUpperCase()}
-                        </Badge>
-                      ))}
-                    </HStack>
-
-                    <HStack>
-                      {notification.status === 'sent' && (
-                        <Badge colorScheme="green">
-                          <HStack spacing={1}>
-                            <FiCheck size={12} />
-                            <Text>SENT</Text>
-                          </HStack>
-                        </Badge>
-                      )}
-                      {notification.status === 'delivered' && (
-                        <Badge colorScheme="blue">
-                          <HStack spacing={1}>
-                            <FiCheck size={12} />
-                            <FiCheck size={12} />
-                            <Text>DELIVERED</Text>
-                          </HStack>
-                        </Badge>
-                      )}
-                    </HStack>
-                  </VStack>
-                </HStack>
-              </CardBody>
-            </Card>
+                  <div className="flex items-center gap-4 mt-3">
+                    <span className="text-xs text-gray-500">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </span>
+                    
+                    {notification.channels && notification.channels.length > 0 && (
+                      <div className="flex gap-1">
+                        {Object.entries(notification.channels).map(([channel, sent]) => (
+                          sent && (
+                            <span key={channel} className="badge bg-gray-200 text-gray-700 text-xs">
+                              {channel}
+                            </span>
+                          )
+                        ))}
+                      </div>
+                    )}
+                    
+                    <span className={`badge text-xs ${
+                      notification.status === 'delivered'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {notification.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
-        </VStack>
+        </div>
       )}
-    </Box>
-  )
-}
+    </div>
+  );
+};
 
-export default Notifications
+export default Notifications;
