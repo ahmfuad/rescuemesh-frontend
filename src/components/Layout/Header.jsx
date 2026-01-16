@@ -11,13 +11,37 @@ import {
   Badge,
   useColorModeValue,
   Avatar,
+  Text,
+  useToast,
 } from '@chakra-ui/react'
 import { FiBell, FiUser, FiSettings, FiLogOut } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const Header = () => {
   const navigate = useNavigate()
+  const toast = useToast()
   const bg = useColorModeValue('white', 'gray.800')
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('user')
+    toast({
+      title: 'Logged out successfully',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    })
+    navigate('/login')
+  }
 
   return (
     <Box
@@ -40,7 +64,7 @@ const Header = () => {
             bgGradient="linear(to-r, brand.500, brand.700)"
             bgClip="text"
             cursor="pointer"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
           >
             🚨 RescueMesh
           </Heading>
@@ -70,12 +94,21 @@ const Header = () => {
 
           <Menu>
             <MenuButton>
-              <Avatar size="sm" name="User" bg="brand.500" />
+              <HStack>
+                <Avatar size="sm" name={user?.name || 'User'} bg="brand.500" />
+                <Text fontSize="sm" display={{ base: 'none', md: 'block' }}>
+                  {user?.name || 'User'}
+                </Text>
+              </HStack>
             </MenuButton>
             <MenuList>
-              <MenuItem icon={<FiUser />}>Profile</MenuItem>
+              <MenuItem icon={<FiUser />} onClick={() => navigate('/profile')}>
+                Profile
+              </MenuItem>
               <MenuItem icon={<FiSettings />}>Settings</MenuItem>
-              <MenuItem icon={<FiLogOut />}>Logout</MenuItem>
+              <MenuItem icon={<FiLogOut />} onClick={handleLogout}>
+                Logout
+              </MenuItem>
             </MenuList>
           </Menu>
         </HStack>

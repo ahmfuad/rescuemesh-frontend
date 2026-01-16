@@ -1,5 +1,14 @@
 import apiClient from '../utils/api'
 
+// Authentication Service APIs
+export const authService = {
+  login: (credentials) => apiClient.post('/api/auth/login', credentials),
+  register: (userData) => apiClient.post('/api/auth/register', userData),
+  logout: () => apiClient.post('/api/auth/logout'),
+  getCurrentUser: () => apiClient.get('/api/auth/me'),
+  updateProfile: (data) => apiClient.put('/api/auth/profile', data),
+}
+
 // Disaster Service APIs
 export const disasterService = {
   getActive: () => apiClient.get('/api/disasters/active'),

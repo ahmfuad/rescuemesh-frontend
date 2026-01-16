@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi'
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: FiHome },
+  { path: '/dashboard', label: 'Dashboard', icon: FiHome },
   { path: '/disasters', label: 'Disasters', icon: FiAlertTriangle },
   { path: '/users', label: 'Users', icon: FiUsers },
   { path: '/skills', label: 'Skills & Resources', icon: FiTool },
